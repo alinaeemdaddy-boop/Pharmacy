@@ -10,9 +10,27 @@ export interface Product {
   id: string;
   name: string;
   category: string;
+  brand: string;
   unitPrice: number;
   unitCost: number;
   lowStockThreshold: number;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contact: string;
+  category: string;
+  rating: number;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  supplierId: string;
+  items: { productId: string; quantity: number; cost: number }[];
+  status: 'DRAFT' | 'SENT' | 'RECEIVED' | 'CANCELLED';
+  date: string;
+  total: number;
 }
 
 export interface StockUnit {
@@ -30,7 +48,31 @@ export interface Pharmacy {
   location: string;
 }
 
-export type TransactionType = 'RESTOCK' | 'TRANSFER' | 'SALE' | 'ADJUSTMENT' | 'REQUEST' | 'RETURN';
+export interface Patient {
+  id: string;
+  name: string;
+  phone: string;
+  medicalHistory: string;
+  lastVisit: string;
+}
+
+export interface Doctor {
+  id: string;
+  name: string;
+  specialty: string;
+  phone: string;
+}
+
+export interface Prescription {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  medications: { productId: string; instructions: string }[];
+  date: string;
+  status: 'PENDING' | 'FILLED' | 'VOID';
+}
+
+export type TransactionType = 'RESTOCK' | 'TRANSFER' | 'SALE' | 'ADJUSTMENT' | 'REQUEST' | 'RETURN' | 'PURCHASE';
 export type TransactionStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'IN_TRANSIT';
 export type PaymentMethod = 'CASH' | 'CARD' | 'WALLET' | 'VOUCHER';
 
@@ -40,7 +82,7 @@ export interface Customer {
   phone: string;
   email: string;
   loyaltyPoints: number;
-  history: string[]; // Transaction IDs
+  history: string[]; 
 }
 
 export interface Transaction {
@@ -56,8 +98,6 @@ export interface Transaction {
   confirmedAt?: string;
   receivedBy?: string;
   notes?: string;
-  
-  // POS Specific
   unitPrice?: number;
   taxAmount?: number;
   discountAmount?: number;
@@ -76,7 +116,7 @@ export interface StockRequest {
 
 export interface Alert {
   id: string;
-  type: 'LOW_STOCK' | 'EXPIRY' | 'DISCREPANCY' | 'REQUEST';
+  type: 'LOW_STOCK' | 'EXPIRY' | 'DISCREPANCY' | 'REQUEST' | 'LOGISTICS';
   severity: 'high' | 'medium' | 'low';
   message: string;
   timestamp: string;
