@@ -22,7 +22,6 @@ const PharmacyView: React.FC<PharmacyViewProps> = ({
   const [activeTab, setActiveTab] = useState<'inventory' | 'requests' | 'receiving' | 'audit'>('inventory');
   const [isScanning, setIsScanning] = useState(false);
   const [suggestions, setSuggestions] = useState<string>("Analyzing local clinic demand...");
-  const [auditQuantities, setAuditQuantities] = useState<Record<string, number>>({});
 
   const pharmacyStock = stock.filter(s => s.locationId === selectedPharmacyId);
   const pendingInbound = transactions.filter(t => t.toId === selectedPharmacyId && t.status === 'PENDING');
@@ -35,57 +34,25 @@ const PharmacyView: React.FC<PharmacyViewProps> = ({
     fetch();
   }, [selectedPharmacyId, products, stock, transactions]);
 
-  const handleRequest = (productId: string, quantity: number) => {
-    onAddRequest({
-      id: `req-${Date.now()}`,
-      pharmacyId: selectedPharmacyId,
-      productId,
-      quantity,
-      status: 'OPEN',
-      date: new Date().toISOString()
-    });
-    alert("Request dispatched to Central Warehouse");
-  };
-
   const handleScanSimulation = (trxId: string) => {
     setIsScanning(true);
     setTimeout(() => {
       onConfirmReceipt(trxId);
       setIsScanning(false);
-      alert("Verification successful. Stock integrated.");
-    }, 1200);
-  };
-
-  const submitAudit = (sUnit: StockUnit) => {
-    const actual = auditQuantities[sUnit.id];
-    if (actual === undefined) return;
-    
-    onAdjustStock({
-      id: `adj-${Date.now()}`,
-      type: 'ADJUSTMENT',
-      productId: sUnit.productId,
-      quantity: actual,
-      fromId: selectedPharmacyId,
-      toId: 'system-adjustment',
-      date: new Date().toISOString(),
-      batchNumber: sUnit.batchNumber,
-      status: 'PENDING',
-      notes: `Periodic Audit: Reconciliation complete.`
-    });
-    alert("Audit log created. Stock adjusted.");
+    }, 1500);
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+    <div className="space-y-12 animate-fade-in stagger-entry">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
         <div>
-          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Pharmacy Ops</h2>
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-1">Branch Level Administration</p>
+          <h2 className="text-5xl font-black text-slate-800 dark:text-white tracking-tighter leading-none">Pharmacy Ops</h2>
+          <p className="text-emerald-500 font-black text-sm mt-3 uppercase tracking-[0.4em]">Node Distribution Control</p>
         </div>
-        <div className="flex items-center space-x-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3">Location:</label>
+        <div className="flex items-center space-x-4 bg-white/40 dark:bg-slate-800/40 p-2.5 rounded-[2rem] border border-white/10 shadow-2xl backdrop-blur-md">
+          <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-4">Node Selection:</label>
           <select 
-            className="px-6 py-2.5 bg-slate-900 border-none rounded-xl font-bold text-white text-xs shadow-xl outline-none focus:ring-4 focus:ring-slate-900/10 cursor-pointer"
+            className="px-8 py-3.5 bg-slate-950 border-none rounded-[1.5rem] font-black text-white text-xs shadow-2xl outline-none focus:ring-4 focus:ring-blue-500/20 cursor-pointer"
             value={selectedPharmacyId}
             onChange={(e) => setSelectedPharmacyId(e.target.value)}
           >
@@ -94,59 +61,57 @@ const PharmacyView: React.FC<PharmacyViewProps> = ({
         </div>
       </div>
 
-      <div className="flex space-x-3 bg-white/50 backdrop-blur-md p-1.5 rounded-2xl w-fit shadow-sm border border-white">
+      <div className="flex space-x-3 overflow-x-auto no-scrollbar pb-4 px-2">
         {[
-          { id: 'inventory', label: 'In Stock', icon: '💎' },
-          { id: 'requests', label: 'Order Stock', icon: '📝' },
-          { id: 'receiving', label: 'Verify Shipments', icon: '📥' },
-          { id: 'audit', label: 'Compliance Audit', icon: '⚖️' }
+          { id: 'inventory', label: 'In-Store Inventory', icon: '💎' },
+          { id: 'requests', label: 'Replenishment', icon: '📝' },
+          { id: 'receiving', label: 'Security Verification', icon: '📥' },
+          { id: 'audit', label: 'Audit & Compliance', icon: '⚖️' }
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-5 py-3 rounded-xl text-xs font-black transition-all flex items-center group ${
-              activeTab === tab.id ? 'bg-cyan-500 shadow-lg text-white scale-105' : 'text-slate-500 hover:text-slate-800 hover:bg-white'
+            className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 whitespace-nowrap ${
+              activeTab === tab.id ? 'bg-blue-600 shadow-[0_15px_30px_-5px_rgba(37,99,235,0.4)] text-white scale-110' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-50 shadow-md hover:-translate-y-1'
             }`}
           >
-            <span className="mr-2 group-hover:scale-125 transition-transform">{tab.icon}</span>
+            <span className="mr-3">{tab.icon}</span>
             {tab.label}
           </button>
         ))}
       </div>
 
       {activeTab === 'inventory' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {pharmacyStock.map((s, idx) => {
             const product = products.find(p => p.id === s.productId);
             const isLow = s.quantity < (product?.lowStockThreshold || 0);
             return (
-              <div key={s.id} className={`bg-white p-8 rounded-[2.5rem] shadow-sm border ${isLow ? 'border-red-100 bg-red-50/10' : 'border-slate-100'} card-hover animate-scale-up`} style={{ animationDelay: `${idx * 0.05}s` }}>
-                <div className="flex justify-between items-start mb-6">
+              <div key={s.id} className={`glass-premium p-10 relative overflow-hidden group animate-scale-up ${isLow ? 'border-rose-500/30' : ''}`} style={{ animationDelay: `${idx * 0.05}s` }}>
+                <div className={`absolute -top-10 -right-10 w-32 h-32 ${isLow ? 'bg-rose-500' : 'bg-blue-500'} opacity-5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700`}></div>
+                <div className="flex justify-between items-start mb-10 relative z-10">
                   <div>
-                    <h4 className="font-black text-slate-800 text-lg leading-tight group-hover:text-cyan-600 transition-colors">{product?.name}</h4>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 inline-block">{product?.category}</span>
+                    <h4 className="font-black text-slate-800 dark:text-white text-xl leading-tight group-hover:text-blue-500 transition-colors">{product?.name}</h4>
+                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-2 block">{product?.category}</span>
                   </div>
                   <div className="text-right">
-                    <p className={`text-4xl font-black tracking-tighter ${isLow ? 'text-red-500' : 'text-slate-800'}`}>{s.quantity.toLocaleString()}</p>
-                    <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Available</p>
+                    <p className={`text-5xl font-black tracking-tighter ${isLow ? 'text-rose-500 pulse-glow' : 'text-slate-900 dark:text-white'}`}>{s.quantity.toLocaleString()}</p>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Available Units</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-6 pt-6 border-t border-slate-100">
+                <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/5 relative z-10">
                    <div>
-                     <p className="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">Serial #</p>
-                     <p className="text-xs font-black text-slate-600 font-mono">{s.batchNumber}</p>
+                     <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase mb-2 tracking-widest">Serial / Batch</p>
+                     <p className="text-sm font-black text-slate-700 dark:text-slate-300 font-mono tracking-tighter">{s.batchNumber}</p>
                    </div>
-                   <div>
-                     <p className="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">Expiration</p>
-                     <p className={`text-xs font-black ${new Date(s.expiryDate) < new Date() ? 'text-red-500' : 'text-slate-600'}`}>{s.expiryDate}</p>
+                   <div className="text-right">
+                     <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase mb-2 tracking-widest">Shelf Life</p>
+                     <p className={`text-sm font-black ${new Date(s.expiryDate) < new Date() ? 'text-rose-500' : 'text-slate-700 dark:text-slate-300'}`}>{s.expiryDate}</p>
                    </div>
                 </div>
                 {isLow && (
-                  <button 
-                    onClick={() => handleRequest(s.productId, (product?.lowStockThreshold || 100) * 2)}
-                    className="mt-8 w-full py-4 bg-red-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all active:scale-95"
-                  >
-                    Quick Restock
+                  <button className="mt-10 w-full py-5 bg-gradient-to-tr from-rose-600 to-pink-500 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                    Initiate Urgent Restock
                   </button>
                 )}
               </div>
@@ -156,47 +121,40 @@ const PharmacyView: React.FC<PharmacyViewProps> = ({
       )}
 
       {activeTab === 'requests' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 animate-scale-up">
-            <h3 className="text-2xl font-black text-slate-800 mb-8 tracking-tight">Order Inventory</h3>
-            <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="glass-premium p-12 shadow-2xl">
+            <h3 className="text-3xl font-black text-slate-800 dark:text-white mb-10 tracking-tighter">Inventory Procurement</h3>
+            <div className="space-y-10">
                <div>
-                 <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Product Catalog</label>
-                 <select id="reqProduct" className="w-full p-5 bg-slate-50 border-none rounded-[1.5rem] font-black text-slate-700 outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all">
+                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase mb-4 tracking-widest">Target Medication</label>
+                 <select className="w-full p-6 bg-slate-100/50 dark:bg-slate-900/50 border-none rounded-[2rem] font-black text-slate-700 dark:text-white outline-none focus:ring-4 focus:ring-blue-500/20 transition-all text-lg shadow-inner">
                     {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                  </select>
                </div>
                <div>
-                 <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Order Quantity</label>
-                 <input id="reqQty" type="number" defaultValue="50" className="w-full p-5 bg-slate-50 border-none rounded-[1.5rem] font-black text-slate-700 outline-none focus:ring-4 focus:ring-cyan-500/10 transition-all" />
+                 <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase mb-4 tracking-widest">Node Capacity Allocation</label>
+                 <input type="number" defaultValue="50" className="w-full p-6 bg-slate-100/50 dark:bg-slate-900/50 border-none rounded-[2rem] font-black text-slate-700 dark:text-white outline-none focus:ring-4 focus:ring-blue-500/20 transition-all text-xl shadow-inner" />
                </div>
-               <button 
-                 onClick={() => {
-                   const pid = (document.getElementById('reqProduct') as HTMLSelectElement).value;
-                   const qty = Number((document.getElementById('reqQty') as HTMLInputElement).value);
-                   handleRequest(pid, qty);
-                 }}
-                 className="w-full py-5 bg-cyan-500 text-white rounded-[1.5rem] font-black text-lg shadow-2xl shadow-cyan-500/20 hover:bg-cyan-600 transition-all hover:-translate-y-1 active:scale-95"
-               >
-                 Submit Request
+               <button className="w-full py-6 bg-slate-950 text-white rounded-[2rem] font-black text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                 Verify & Submit Order
                </button>
             </div>
           </div>
-          <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-10 rounded-[3rem] text-white shadow-2xl flex flex-col justify-between relative overflow-hidden group">
-             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-110 transition-transform"></div>
+          <div className="bg-gradient-to-br from-indigo-700 via-blue-800 to-slate-950 p-12 rounded-[3rem] text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col justify-between relative overflow-hidden group">
+             <div className="absolute top-[-10%] right-[-10%] w-80 h-80 bg-blue-500/20 rounded-full blur-[100px] group-hover:scale-150 transition-all duration-1000"></div>
              <div>
-               <div className="flex items-center mb-8 relative z-10">
-                 <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-3xl backdrop-blur-md">✨</div>
-                 <div className="ml-4">
-                   <h3 className="text-2xl font-black tracking-tight">AI Demand Predictor</h3>
-                   <p className="text-indigo-200 text-[10px] font-black uppercase tracking-[0.2em] mt-0.5">Renew-Flash-Engine</p>
+               <div className="flex items-center mb-12 relative z-10">
+                 <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center text-4xl backdrop-blur-3xl border border-white/20 shadow-2xl animate-pulse">🤖</div>
+                 <div className="ml-6">
+                   <h3 className="text-2xl font-black tracking-tight leading-none">AI Market Sync</h3>
+                   <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mt-2">Renew Prediction Matrix</p>
                  </div>
                </div>
-               <div className="space-y-4 relative z-10">
-                 {suggestions.split('\n').map((line, i) => (
-                   <div key={i} className="flex items-start bg-white/10 p-4 rounded-2xl border border-white/5 backdrop-blur-sm transition-all hover:bg-white/15">
-                     <span className="text-indigo-300 mr-3 text-lg">✦</span>
-                     <p className="text-sm font-medium text-indigo-50 leading-relaxed">{line}</p>
+               <div className="space-y-6 relative z-10">
+                 {suggestions.split('\n').filter(l => l.trim()).map((line, i) => (
+                   <div key={i} className="flex items-start bg-white/5 p-6 rounded-[2rem] border border-white/5 backdrop-blur-3xl transition-all hover:bg-white/10 hover:translate-x-2">
+                     <span className="text-blue-400 mr-4 text-2xl">✦</span>
+                     <p className="text-base font-bold text-blue-100 leading-relaxed italic">{line.replace(/^\d+\.\s*/, '')}</p>
                    </div>
                  ))}
                </div>
@@ -206,44 +164,46 @@ const PharmacyView: React.FC<PharmacyViewProps> = ({
       )}
 
       {activeTab === 'receiving' && (
-        <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 animate-scale-up">
-           <h3 className="text-2xl font-black text-slate-800 mb-2 tracking-tight">Shipment Verification</h3>
-           <p className="text-slate-400 text-sm mb-10">Secure scan-based receipt confirmation for inbound clinic transfers.</p>
+        <div className="glass-premium p-12 shadow-2xl animate-scale-up">
+           <h3 className="text-3xl font-black text-slate-800 dark:text-white mb-4 tracking-tighter">Inbound Logistics Monitor</h3>
+           <p className="text-slate-400 dark:text-slate-500 font-bold text-sm mb-12 uppercase tracking-widest">Branch Encryption Verification Protocol</p>
            
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
              {pendingInbound.map((t, idx) => {
                const product = products.find(p => p.id === t.productId);
                return (
-                 <div key={t.id} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 group hover:shadow-xl transition-all animate-slide-in" style={{ animationDelay: `${idx * 0.1}s` }}>
-                    <div className="flex items-center mb-8">
-                      <div className="w-16 h-16 bg-white rounded-3xl shadow-sm flex items-center justify-center text-3xl mr-5 border border-slate-100">
-                        📦
+                 <div key={t.id} className="p-10 bg-slate-50/50 dark:bg-slate-900/50 rounded-[2.5rem] border border-white/10 group hover:shadow-2xl transition-all animate-slide-in relative overflow-hidden" style={{ animationDelay: `${idx * 0.1}s` }}>
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
+                    <div className="flex items-center mb-10 relative z-10">
+                      <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl flex items-center justify-center text-4xl mr-6 border border-white/10">
+                        🚛
                       </div>
                       <div>
-                        <p className="font-black text-slate-800 text-lg leading-tight">{product?.name}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-widest">Qty: <span className="text-slate-700">{t.quantity}</span> | Batch: <span className="text-slate-700">{t.batchNumber}</span></p>
+                        <p className="font-black text-slate-800 dark:text-white text-xl leading-tight mb-2">{product?.name}</p>
+                        <p className="text-[10px] text-blue-500 font-black uppercase mt-1 tracking-widest">Volume: {t.quantity} Units • Batch: {t.batchNumber}</p>
                       </div>
                     </div>
                     <button 
                       disabled={isScanning}
                       onClick={() => handleScanSimulation(t.id)}
-                      className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center transition-all shadow-lg ${
-                        isScanning ? 'bg-slate-200 text-slate-400' : 'bg-white text-cyan-600 hover:bg-cyan-600 hover:text-white border border-cyan-100'
+                      className={`w-full py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center transition-all shadow-2xl relative z-10 ${
+                        isScanning ? 'bg-slate-200 text-slate-400' : 'bg-slate-950 text-white hover:scale-105 active:scale-95'
                       }`}
                     >
                       {isScanning ? (
                         <div className="flex items-center">
-                          <svg className="animate-spin h-4 w-4 mr-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                          Verifying...
+                          <div className="shimmer h-4 w-4 mr-3 bg-slate-300 rounded-full"></div>
+                          Verifying Digital Seal...
                         </div>
-                      ) : 'Confirm Receipt'}
+                      ) : 'Acknowledge & Sync'}
                     </button>
                  </div>
                );
              })}
              {pendingInbound.length === 0 && (
-               <div className="col-span-full py-20 text-center opacity-40">
-                  <p className="font-black uppercase tracking-widest text-xs">No pending transfers</p>
+               <div className="col-span-full py-32 text-center opacity-20">
+                  <div className="text-8xl mb-8">📡</div>
+                  <p className="font-black uppercase tracking-[0.5em] text-xs">No active data streams</p>
                </div>
              )}
            </div>
