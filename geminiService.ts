@@ -2,7 +2,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { Product, StockUnit, Transaction } from './types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Use process.env.API_KEY directly as per guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getInventoryInsights = async (
   products: Product[],
@@ -29,6 +30,7 @@ export const getInventoryInsights = async (
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
+    // Extracting text from response using .text property
     return response.text || "No insights available at the moment.";
   } catch (error) {
     console.error("Gemini Error:", error);
@@ -66,6 +68,7 @@ export const getReplenishmentForecast = async (
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
+    // Extracting text from response using .text property
     return response.text || "Forecasting data unavailable.";
   } catch (error) {
     console.error("Gemini Error:", error);
@@ -94,6 +97,7 @@ export const getPharmacySuggestions = async (
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
+    // Extracting text from response using .text property
     return response.text || "No suggestions for this pharmacy.";
   } catch (error) {
     return "Replenishment engine busy.";

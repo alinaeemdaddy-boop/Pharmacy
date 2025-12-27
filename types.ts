@@ -14,6 +14,15 @@ export interface Product {
   unitPrice: number;
   unitCost: number;
   lowStockThreshold: number;
+  complianceStatus: 'STABLE' | 'WARNING' | 'CRITICAL';
+  batchInfo?: Batch[];
+}
+
+export interface Batch {
+  number: string;
+  expiryDate: string;
+  quantity: number;
+  receivedDate: string;
 }
 
 export interface Supplier {
@@ -22,6 +31,8 @@ export interface Supplier {
   contact: string;
   category: string;
   rating: number;
+  performanceScore: number; // 0-100
+  contracts: string[];
 }
 
 export interface PurchaseOrder {
@@ -31,6 +42,7 @@ export interface PurchaseOrder {
   status: 'DRAFT' | 'SENT' | 'RECEIVED' | 'CANCELLED';
   date: string;
   total: number;
+  trackingNumber?: string;
 }
 
 export interface StockUnit {
@@ -46,30 +58,17 @@ export interface Pharmacy {
   id: string;
   name: string;
   location: string;
+  efficiencyScore: number;
 }
 
-export interface Patient {
+export interface AuditLog {
   id: string;
-  name: string;
-  phone: string;
-  medicalHistory: string;
-  lastVisit: string;
-}
-
-export interface Doctor {
-  id: string;
-  name: string;
-  specialty: string;
-  phone: string;
-}
-
-export interface Prescription {
-  id: string;
-  patientId: string;
-  doctorId: string;
-  medications: { productId: string; instructions: string }[];
-  date: string;
-  status: 'PENDING' | 'FILLED' | 'VOID';
+  timestamp: string;
+  userId: string;
+  action: string;
+  module: string;
+  details: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
 }
 
 export type TransactionType = 'RESTOCK' | 'TRANSFER' | 'SALE' | 'ADJUSTMENT' | 'REQUEST' | 'RETURN' | 'PURCHASE';
@@ -96,8 +95,6 @@ export interface Transaction {
   batchNumber: string;
   status: TransactionStatus;
   confirmedAt?: string;
-  receivedBy?: string;
-  notes?: string;
   unitPrice?: number;
   taxAmount?: number;
   discountAmount?: number;

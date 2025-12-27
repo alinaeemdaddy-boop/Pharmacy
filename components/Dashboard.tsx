@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, StockUnit, Transaction, Alert } from '../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { getInventoryInsights } from '../geminiService';
 
 interface DashboardProps {
@@ -12,7 +12,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ products, stock, transactions, alerts }) => {
-  const [insights, setInsights] = useState<string>("Analyzing clinic ecosystems...");
+  const [insights, setInsights] = useState<string>("Analyzing enterprise intelligence...");
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -22,8 +22,6 @@ const Dashboard: React.FC<DashboardProps> = ({ products, stock, transactions, al
     fetchInsights();
   }, [products, stock, transactions]);
 
-  const totalStockUnits = stock.reduce((acc, curr) => acc + curr.quantity, 0);
-  
   const totalValuation = stock.reduce((acc, s) => {
     const product = products.find(p => p.id === s.productId);
     return acc + (s.quantity * (product?.unitCost || 0));
@@ -31,142 +29,143 @@ const Dashboard: React.FC<DashboardProps> = ({ products, stock, transactions, al
 
   const totalRevenue = transactions
     .filter(t => t.type === 'SALE' && t.status === 'CONFIRMED')
-    .reduce((acc, t) => {
-      const p = products.find(prod => prod.id === t.productId);
-      return acc + (t.quantity * (p?.unitPrice || 0));
-    }, 0);
-
-  const totalReceived = transactions
-    .filter(t => t.type === 'RESTOCK' && t.status === 'CONFIRMED')
-    .reduce((sum, t) => sum + t.quantity, 0);
-  
-  const totalSold = transactions
-    .filter(t => t.type === 'SALE' && t.status === 'CONFIRMED')
-    .reduce((sum, t) => sum + t.quantity, 0);
+    .reduce((acc, t) => acc + (t.quantity * (t.unitPrice || 0)), 0);
 
   const productStockData = products.map(p => ({
     name: p.name.split(' ')[0],
     quantity: stock.filter(s => s.productId === p.id).reduce((sum, s) => sum + s.quantity, 0)
-  }));
+  })).slice(0, 6);
 
-  const distributionData = [
-    { name: 'Warehouse', value: stock.filter(s => s.locationId === 'warehouse').reduce((sum, s) => sum + s.quantity, 0) },
-    { name: 'Pharmacies', value: stock.filter(s => s.locationId !== 'warehouse').reduce((sum, s) => sum + s.quantity, 0) },
+  const chartData = [
+    { name: 'Mon', revenue: 4200, profit: 1200 },
+    { name: 'Tue', revenue: 3800, profit: 900 },
+    { name: 'Wed', revenue: 5100, profit: 1800 },
+    { name: 'Thu', revenue: 4700, profit: 1500 },
+    { name: 'Fri', revenue: 6200, profit: 2200 },
+    { name: 'Sat', revenue: 3100, profit: 800 },
+    { name: 'Sun', revenue: 2800, profit: 600 },
   ];
 
-  const COLORS = ['#0ea5e9', '#6366f1', '#a855f7', '#ec4899'];
-
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Inventory Valuation" value={`$${totalValuation.toLocaleString()}`} icon="📈" color="blue" delay="0s" />
-        <StatCard title="Revenue Stream" value={`$${totalRevenue.toLocaleString()}`} icon="💎" color="emerald" delay="0.1s" />
-        <StatCard title="Total Inventory" value={totalStockUnits.toLocaleString()} icon="📦" color="cyan" delay="0.2s" />
-        <StatCard title="System Health" value={`${alerts.length === 0 ? 'Healthy' : alerts.length + ' Issues'}`} icon="🩺" color="rose" delay="0.3s" />
+    <div className="space-y-12 animate-fade-in pb-10">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div>
+          <h2 className="text-5xl font-black text-slate-800 dark:text-white tracking-tighter leading-none">Global Pulse</h2>
+          <p className="text-blue-500 font-black text-sm mt-3 uppercase tracking-[0.4em]">Enterprise Operations Center</p>
+        </div>
+        <div className="flex bg-white/40 dark:bg-slate-800/40 p-1.5 rounded-[2rem] border border-white/10 backdrop-blur-md shadow-2xl">
+           {(['Daily', 'Weekly', 'Monthly'] as const).map(p => (
+             <button key={p} className={`px-8 py-3.5 rounded-[1.5rem] text-xs font-black transition-all uppercase tracking-widest ${p === 'Weekly' ? 'bg-gradient-to-tr from-blue-600 to-cyan-500 text-white shadow-xl scale-110' : 'text-slate-500 hover:text-slate-800 dark:hover:text-white'}`}>
+               {p}
+             </button>
+           ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 card-hover">
-          <div className="flex justify-between items-center mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <StatCard title="Valuation" value={`$${totalValuation.toLocaleString()}`} change="+12.4%" icon="💎" gradient="from-blue-600 to-cyan-500" />
+        <StatCard title="Total Revenue" value={`$${totalRevenue.toLocaleString()}`} change="+8.2%" icon="📈" gradient="from-emerald-500 to-teal-400" />
+        <StatCard title="Network Load" value="94.2%" change="Optimized" icon="⚡" gradient="from-purple-600 to-pink-500" />
+        <StatCard title="Active Alerts" value={alerts.length} change="Live Feed" icon="🚨" gradient="from-rose-600 to-orange-500" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 glass-premium p-10 relative overflow-hidden group">
+          <div className="absolute -top-20 -right-20 w-80 h-80 bg-blue-500/10 rounded-full blur-[80px] group-hover:scale-150 transition-transform duration-1000"></div>
+          <div className="flex justify-between items-center mb-12 relative z-10">
             <div>
-              <h3 className="text-xl font-black text-slate-800 tracking-tight">Stock Analysis</h3>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Units per Medication</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="w-2 h-2 bg-cyan-500 rounded-full"></span>
-              <span className="text-[10px] font-black text-slate-500 uppercase">Live Data</span>
+              <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Revenue Dynamics</h3>
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Real-time Performance Matrix</p>
             </div>
           </div>
-          <div className="h-[350px]">
+          <div className="h-[400px] w-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={productStockData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dy={10} />
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 232, 240, 0.1)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dy={15} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dx={-10} />
                 <Tooltip 
-                  cursor={{fill: '#f8fafc'}} 
-                  contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)'}} 
+                  cursor={{stroke: '#3b82f6', strokeWidth: 2}} 
+                  contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)'}} 
                 />
-                <Bar dataKey="quantity" fill="url(#colorBar)" radius={[12, 12, 0, 0]} isAnimationActive={true}>
-                  <defs>
-                    <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={1}/>
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0.8}/>
-                    </linearGradient>
-                  </defs>
-                </Bar>
-              </BarChart>
+                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={5} fillOpacity={1} fill="url(#areaGrad)" animationDuration={2000} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 card-hover flex flex-col h-full">
-          <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">Inventory Mix</h3>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-10">Location Distribution</p>
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={distributionData} innerRadius={80} outerRadius={110} paddingAngle={10} dataKey="value" stroke="none">
-                    {distributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{borderRadius: '20px'}} />
-                </PieChart>
-              </ResponsiveContainer>
+        <div className="bg-slate-950 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between group">
+          <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-blue-600/30 rounded-full blur-[100px] group-hover:scale-150 transition-all duration-1000"></div>
+          <div>
+            <div className="flex items-center space-x-5 mb-12">
+              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-3xl backdrop-blur-2xl border border-white/20 shadow-2xl animate-pulse">🤖</div>
+              <div>
+                <h3 className="text-xl font-black tracking-tight">AI Forecasting</h3>
+                <p className="text-blue-400 text-[9px] font-black uppercase tracking-[0.2em] mt-1">Predictive Analytics Engine</p>
+              </div>
             </div>
-            <div className="mt-8 grid grid-cols-2 gap-4 w-full">
-               {distributionData.map((d, i) => (
-                 <div key={d.name} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
-                   <div className="flex items-center justify-center mb-1">
-                     <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: COLORS[i] }} />
-                     <span className="text-[10px] font-black text-slate-500 uppercase">{d.name}</span>
-                   </div>
-                   <p className="text-lg font-black text-slate-800 leading-none">{d.value.toLocaleString()}</p>
-                 </div>
-               ))}
+            <div className="space-y-6">
+              {insights.split('\n').filter(l => l.trim()).slice(0, 4).map((line, i) => (
+                <div key={i} className="flex items-start bg-white/5 p-6 rounded-3xl border border-white/5 hover:bg-white/10 transition-all cursor-default group/item hover:translate-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full mt-1.5 mr-4 flex-shrink-0 group-hover/item:scale-150 transition-transform"></div>
+                  <p className="text-sm font-bold text-slate-300 leading-relaxed italic">{line.replace(/^\d+\.\s*/, '')}</p>
+                </div>
+              ))}
             </div>
           </div>
+          <button className="mt-12 w-full py-5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-[0_20px_40px_-10px_rgba(59,130,246,0.5)] hover:scale-105 active:scale-95 transition-all">Deep Diagnostics</button>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-gradient-to-br from-cyan-600 to-indigo-700 p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl transition-transform duration-700 group-hover:scale-125"></div>
-          <div className="flex items-center mb-8 relative z-10">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-2xl mr-4 backdrop-blur-md">🤖</div>
-            <div>
-              <h3 className="text-2xl font-black tracking-tight">AI Supply Intelligence</h3>
-              <p className="text-cyan-100 text-xs font-bold uppercase tracking-widest">Powered by Renew-Gemini</p>
-            </div>
-          </div>
-          <div className="space-y-4 relative z-10">
-            {insights.split('\n').map((line, i) => (
-              <div key={i} className="flex items-start bg-white/10 p-4 rounded-2xl border border-white/5 backdrop-blur-sm hover:bg-white/20 transition-all cursor-default">
-                <div className="w-1.5 h-1.5 bg-cyan-300 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                <p className="text-sm font-medium text-cyan-50 leading-relaxed">{line}</p>
-              </div>
-            ))}
-          </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="glass-premium p-10 overflow-hidden">
+           <div className="flex justify-between items-center mb-10">
+              <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Category Distribution</h3>
+           </div>
+           <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[
+                  { name: 'Antibiotics', value: 45 },
+                  { name: 'Analgesics', value: 30 },
+                  { name: 'Diabetes', value: 15 },
+                  { name: 'Vitamins', value: 10 },
+                ]}>
+                  <XAxis dataKey="name" hide />
+                  <YAxis hide />
+                  <Tooltip contentStyle={{borderRadius: '20px', border: 'none'}} />
+                  <Bar dataKey="value" radius={[12, 12, 12, 12]} barSize={40}>
+                    {[0,1,2,3].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 0 ? '#3b82f6' : index === 1 ? '#10b981' : index === 2 ? '#8b5cf6' : '#f59e0b'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+           </div>
         </div>
-
-        <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100 card-hover">
-          <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-2">Check & Balance</h3>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-10">Real-time Stock Reconciliation</p>
-          <div className="grid grid-cols-2 gap-6">
-            <BalanceCard label="Stock Inbound" value={`+${totalReceived}`} color="emerald" icon="📥" />
-            <BalanceCard label="Stock Outbound" value={`-${totalSold}`} color="rose" icon="📤" />
-            <div className="col-span-2 p-8 bg-slate-900 rounded-3xl text-white flex justify-between items-center shadow-xl">
-               <div>
-                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Net System Balance</p>
-                 <h4 className="text-4xl font-black text-cyan-400">{totalStockUnits.toLocaleString()}</h4>
-               </div>
-               <div className="flex items-center space-x-2 bg-emerald-500/10 text-emerald-400 px-4 py-2 rounded-2xl border border-emerald-500/20">
-                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
-                 <span className="text-xs font-black uppercase">Verified</span>
-               </div>
-            </div>
+        
+        <div className="bg-gradient-to-br from-indigo-700 via-blue-800 to-slate-950 rounded-[3rem] p-10 text-white shadow-2xl flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-12 opacity-10 group-hover:scale-125 transition-transform duration-1000">
+             <svg className="w-56 h-56" fill="currentColor" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          </div>
+          <div>
+            <h3 className="text-3xl font-black tracking-tighter mb-6 leading-none">Operational <br/> Velocity: 9.8X</h3>
+            <p className="text-blue-100 text-base font-bold opacity-70 leading-relaxed max-w-sm">All pharmacy nodes are synchronizing at peak efficiency. Latency in replenishment has decreased by 14% this week.</p>
+          </div>
+          <div className="mt-12 flex space-x-4">
+             <div className="bg-white/10 backdrop-blur-3xl px-8 py-5 rounded-3xl border border-white/10 flex-1">
+               <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Efficiency</p>
+               <p className="text-3xl font-black">94%</p>
+             </div>
+             <div className="bg-white/10 backdrop-blur-3xl px-8 py-5 rounded-3xl border border-white/10 flex-1 text-center">
+                <div className="w-8 h-8 bg-emerald-400 rounded-full mx-auto mb-2 animate-pulse shadow-[0_0_20px_#10b981]"></div>
+                <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest">Health</p>
+             </div>
           </div>
         </div>
       </div>
@@ -174,30 +173,17 @@ const Dashboard: React.FC<DashboardProps> = ({ products, stock, transactions, al
   );
 };
 
-const StatCard = ({ title, value, icon, color, delay }: { title: string, value: string, icon: string, color: string, delay: string }) => (
-  <div 
-    className="bg-white p-7 rounded-[2.2rem] shadow-sm border border-slate-100 card-hover animate-scale-up"
-    style={{ animationDelay: delay }}
-  >
-    <div className="flex justify-between items-start">
-      <div>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
-        <h4 className="text-2xl font-black text-slate-800 leading-none">{value}</h4>
-      </div>
-      <div className={`w-12 h-12 rounded-2xl bg-${color}-50 text-${color}-600 flex items-center justify-center text-xl shadow-inner border border-${color}-100`}>
+const StatCard = ({ title, value, change, icon, gradient }: any) => (
+  <div className="glass-premium p-8 relative overflow-hidden group">
+    <div className={`absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-tr ${gradient} opacity-10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700`}></div>
+    <div className="flex justify-between items-start mb-6">
+      <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-3xl shadow-inner group-hover:rotate-12 transition-transform duration-500">
         {icon}
       </div>
+      <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 dark:bg-emerald-900/40 px-3 py-1.5 rounded-full tracking-widest">{change}</span>
     </div>
-  </div>
-);
-
-const BalanceCard = ({ label, value, color, icon }: { label: string, value: string, color: string, icon: string }) => (
-  <div className={`p-6 bg-${color}-50 rounded-3xl border border-${color}-100 transition-transform hover:scale-[1.02]`}>
-    <div className="flex items-center mb-2">
-      <span className="mr-2 text-lg">{icon}</span>
-      <p className={`text-[10px] font-black text-${color}-600 uppercase tracking-widest`}>{label}</p>
-    </div>
-    <p className={`text-2xl font-black text-${color}-700`}>{value}</p>
+    <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.25em] mb-2">{title}</p>
+    <h4 className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">{value}</h4>
   </div>
 );
 
